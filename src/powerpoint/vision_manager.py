@@ -6,8 +6,8 @@ from io import BytesIO
 from openai import OpenAI
 
 class VisionManager:
-
-    async def generate_and_save_image(self, prompt: str, output_path: str) -> str:
+    
+    def generate_and_save_image(self, prompt: str, output_path: str) -> str:
         """Generate an image using OpenAI DALL-E 3 and save it to the specified path."""
 
         api_key = os.environ.get('OPENAI_API_KEY')
@@ -18,11 +18,11 @@ class VisionManager:
 
         try:
             # Generate the image using DALL-E 3
-            response = client.Image.create(
+            response = client.images.generate(
+                model="dall-e-3",
                 prompt=prompt,
                 n=1,
-                size="1024x1024",
-                model="dall-e-3"
+                size="1024x1024"
             )
         except Exception as e:
             raise ValueError(f"Failed to generate image: {str(e)}")
@@ -41,10 +41,7 @@ class VisionManager:
         try:
             image = Image.open(BytesIO(response.content))
             # Ensure the save directory exists
-            try:
-                os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            except OSError as e:
-                raise ValueError(f"Failed to create a directory for image: str({e})")
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
             # Save the image
             image.save(output_path)
         except (IOError, OSError) as e:
