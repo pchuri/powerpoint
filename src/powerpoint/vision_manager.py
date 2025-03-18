@@ -8,7 +8,7 @@ from openai import OpenAI
 class VisionManager:
 
     async def generate_and_save_image(self, prompt: str, output_path: str) -> str:
-        """Generate an image using OpenAI AI/Flux Model and save it to the specified path."""
+        """Generate an image using OpenAI DALL-E 3 and save it to the specified path."""
 
         api_key = os.environ.get('OPENAI_API_KEY')
         if not api_key:
@@ -17,14 +17,12 @@ class VisionManager:
         client = OpenAI(api_key=api_key)
 
         try:
-            # Generate the image
-            response = client.images.generate(
+            # Generate the image using DALL-E 3
+            response = client.Image.create(
                 prompt=prompt,
-                width=1024,
-                height=1024,
-                steps=4,
-                model="black-forest-labs/FLUX.1-schnell-Free",
                 n=1,
+                size="1024x1024",
+                model="dall-e-3"
             )
         except Exception as e:
             raise ValueError(f"Failed to generate image: {str(e)}")
