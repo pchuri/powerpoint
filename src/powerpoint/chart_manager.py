@@ -12,50 +12,108 @@ class ChartManager:
     def determine_chart_type(self, data: Dict[str, Any]) -> tuple[XL_CHART_TYPE, str]:
         """
         Analyze the data structure and determine the most appropriate chart type.
-        Returns tuple of (PowerPoint chart type enum, chart_format)
+        Uses heuristics based on data patterns to select the best visualization.
+        
+        Args:
+            data: Dictionary containing chart data with keys for 'series', 'categories', etc.
+            
+        Returns:
+            tuple: (PowerPoint chart type enum, chart_format string)
         """
-        # evaluate the data
+        # Get basic data properties
         series_count = len(data["series"])
         categories = data.get("categories", [])
+        category_count = len(categories) if categories else 0
+        
+        # Validate series data exists
+        if not data["series"] or not all(s.get("values") for s in data["series"]):
+            # Default to column chart if data is missing or incomplete
+            return XL_CHART_TYPE.COLUMN_CLUSTERED, "category"
 
-        # Check for XY data more safely by checking the first value of each series
+        # Check for XY scatter data (coordinates)
+        # We look for values that are [x,y] pairs
         is_xy_data = False
         for series in data["series"]:
             values = series.get("values", [])
             if values:
+                # Check if the first value is a coordinate pair
                 first_value = values[0]
                 is_xy_data = isinstance(first_value, (list, tuple)) and len(first_value) == 2
+                
+                # Verify all values are valid coordinate pairs
+                if is_xy_data:
+                    is_xy_data = all(
+                        isinstance(v, (list, tuple)) and len(v) == 2 and 
+                        all(isinstance(coord, (int, float)) for coord in v)
+                        for v in values if v is not None
+                    )
                 break
 
         if is_xy_data:
             return XL_CHART_TYPE.XY_SCATTER, "xy"
 
-        # If we have percentage data that adds up to ~100, suggest pie chart
-        if series_count == 1 and categories:
+        # Check for pie chart conditions:
+        # 1. Single series
+        # 2. Few categories (<=8 for readability)
+        # 3. Values sum to approximately 100 (suggesting percentages)
+        if series_count == 1 and categories and len(categories) <= 8:
             values = data["series"][0].get("values", [])
-            if len(values) <= 8:
-                try:
-                    total = sum(float(v) for v in values)
+            try:
+                # Filter out None or non-numeric values
+                numeric_values = [float(v) for v in values if v is not None]
+                if numeric_values:
+                    total = sum(numeric_values)
+                    
+                    # Check if values are percentages (sum ≈ 100)
                     if 95 <= total <= 105:
                         return XL_CHART_TYPE.PIE, "category"
-                except (TypeError, ValueError):
-                    pass
+                    
+                    # Check if all values are similar magnitude (good for pie)
+                    if numeric_values:
+                        max_val = max(numeric_values)
+                        min_val = min(numeric_values)
+                        # If largest value is less than 10x smallest, pie is still readable
+                        if min_val > 0 and max_val / min_val < 10:
+                            return XL_CHART_TYPE.PIE, "category"
+            except (TypeError, ValueError):
+                pass  # Non-numeric data, continue to other chart types
 
-        # For time series or trending data, suggest line chart
-        if categories and any(
-                isinstance(cat, (str, int)) and
-                any(term in str(cat).lower() for term in
-                    ["date", "time", "year", "month", "quarter", "q1", "q2", "q3", "q4"])
+        # Check for time series patterns in category names
+        time_related_terms = ["date", "time", "year", "month", "day", "quarter", "q1", "q2", "q3", "q4", 
+                             "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+        
+        has_time_categories = False
+        if categories:
+            has_time_categories = any(
+                isinstance(cat, (str, int)) and 
+                any(term in str(cat).lower() for term in time_related_terms)
                 for cat in categories
-        ):
-            return XL_CHART_TYPE.LINE, "category"
+            )
+            
+            # For time series data, use line chart
+            if has_time_categories:
+                # For multiple series over time, use line chart
+                return XL_CHART_TYPE.LINE, "category"
 
-        # For multiple series comparing values, suggest bar chart
-        if series_count > 1 and categories:
+        # Data size-based decisions
+        if category_count > 0:
+            # Many categories with few series: use column chart
+            if category_count > 10 and series_count == 1:
+                return XL_CHART_TYPE.COLUMN_CLUSTERED, "category"
+                
+            # Many series with few categories: use bar chart (better label readability)
+            if series_count > 3 and category_count <= 10:
+                return XL_CHART_TYPE.BAR_CLUSTERED, "category"
+                
+            # Many categories with multiple series: use line chart (less visual clutter)
+            if category_count > 10 and series_count > 1:
+                return XL_CHART_TYPE.LINE, "category"
+        
+        # Default recommendations based on series count
+        if series_count > 1:
             return XL_CHART_TYPE.BAR_CLUSTERED, "category"
-
-        # Default to column chart for single series
-        return XL_CHART_TYPE.COLUMN_CLUSTERED, "category"
+        else:
+            return XL_CHART_TYPE.COLUMN_CLUSTERED, "category"
 
 
     def add_chart_to_slide(self, slide, chart_type: XL_CHART_TYPE, data: Dict[str, Any],
