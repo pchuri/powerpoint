@@ -3,18 +3,18 @@ import requests
 
 from PIL import Image
 from io import BytesIO
-from together import Together
+from openai import OpenAI
 
 class VisionManager:
 
     async def generate_and_save_image(self, prompt: str, output_path: str) -> str:
-        """Generate an image using Together AI/Flux Model and save it to the specified path."""
+        """Generate an image using OpenAI AI/Flux Model and save it to the specified path."""
 
-        api_key = os.environ.get('TOGETHER_API_KEY')
+        api_key = os.environ.get('OPENAI_API_KEY')
         if not api_key:
-            raise ValueError("TOGETHER_API_KEY environment variable not set.")
+            raise ValueError("OPENAI_API_KEY environment variable not set.")
 
-        client = Together(api_key=api_key)
+        client = OpenAI(api_key=api_key)
 
         try:
             # Generate the image
