@@ -9,6 +9,7 @@ dependencies = [
  "pillow>=11.1.0",
  "python-pptx>=1.0.2",
  "requests>=2.32.3",
+ "aiohttp>=3.9.5",
  "together>=1.4.1",
  "openai==1.66.3",
 ]

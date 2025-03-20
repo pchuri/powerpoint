@@ -53,33 +53,35 @@ class PresentationManager:
         else:
             p = text_frame.add_paragraph()
 
-        # Process the first line separately (if it exists)
-        if lines and lines[0].strip():
-            first_line = lines[0]
+        # Helper function to process a line and determine its level
+        def process_line(line):
             # Count leading tabs (ASCII 9) to determine indentation level
             level = 0
-            while first_line and ord(first_line[0]) == 9:  # ASCII 9 is HT (tab)
-                level += 1
-                first_line = first_line[1:]
-
-            p.text = first_line.strip()
-            p.level = level
-
-        # Process remaining lines
-        for line in lines[1:]:
-            if not line.strip():
-                continue  # Skip empty lines
-
-            # Count leading tabs (ASCII 9) to determine indentation level
-            level = 0
-            while line and ord(line[0]) == 9:  # ASCII 9 is HT (tab)
+            original_line = line
+            
+            while line and line[0] == '\t':  # Tab character, more readable than ord(line[0]) == 9
                 level += 1
                 line = line[1:]
+            
+            return line.strip(), level
 
-            # Add the paragraph with proper indentation
-            p = text_frame.add_paragraph()
-            p.text = line.strip()
-            p.level = level
+        # Process all lines
+        is_first_line = True
+        
+        for line in lines:
+            if not line.strip():
+                continue  # Skip empty lines
+                
+            processed_text, level = process_line(line)
+            
+            if is_first_line:
+                p.text = processed_text
+                p.level = level
+                is_first_line = False
+            else:
+                p = text_frame.add_paragraph()
+                p.text = processed_text
+                p.level = level
 
     def add_section_header_slide(self, presentation_name: str, header: str, subtitle: str):
         """
