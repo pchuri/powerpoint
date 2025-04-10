@@ -59,26 +59,6 @@ async def main(folder_path):
                 },
             ),
             types.Tool(
-                name="generate-and-save-image",
-                description="Generates an image using a FLUX model and save the image to the specified path. The tool "
-                            "will return a PNG file path. It should be used when the user asks to generate or create an "
-                            "image or a picture.",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "prompt": {
-                            "type": "string",
-                            "description": "Description of the image to generate in the form of a prompt.",
-                        },
-                        "file_name": {
-                            "type": "string",
-                            "description": "Filename of the image. Include the extension of .png",
-                        },
-                    },
-                    "required": ["prompt", "file_name"],
-                },
-            ),
-            types.Tool(
                 name="download-image",
                 description="Downloads an image from the provided URL and saves it to the specified path. Use this tool when "
                             "the user wants to use an external image from a URL in their presentation.",
@@ -425,32 +405,6 @@ async def main(folder_path):
                     text=f"Opened presentation: {presentation_name}"
                 )
             ]
-        elif name == "generate-and-save-image":
-            prompt = arguments.get("prompt")
-            file_name = arguments.get("file_name")
-            try:
-                safe_file_path = sanitize_path(folder_path, file_name)
-            except ValueError as e:
-                raise ValueError(f"Invalid file path: {str(e)}")
-
-            if not all([prompt, file_name]):
-                raise ValueError("Missing required arguments")
-
-            try:
-                saved_path = await vision_manager.generate_and_save_image(prompt, str(safe_file_path))
-                return [
-                    types.TextContent(
-                        type="text",
-                        text=f"Successfully generated and saved image to: {saved_path}"
-                    )
-                ]
-            except Exception as e:
-                return [
-                    types.TextContent(
-                        type="text",
-                        text=f"Failed to generate image: {str(e)}"
-                    )
-                ]
         elif name == "download-image":
             image_url = arguments.get("image_url")
             file_name = arguments.get("file_name")
