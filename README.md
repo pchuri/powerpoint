@@ -17,6 +17,11 @@ The server implements multiple tools:
 - ```add-slide-title-only```: Adds a title slide to the presentation
   - Takes "presentation_name" and "title" as required string arguments
   - Creates a title slide with "title" and adds it to presentation
+- ```download-image```: Downloads an image from a URL
+  - Takes "image_url" and "file_name" as required string arguments
+  - Downloads an image from the provided URL and saves it to the specified path for use in presentations
+  - The downloaded image is saved to the folder_path and can be referenced in the presentation
+  - This tool is useful when you want to incorporate external images into your presentation
 - ```add-slide-section-header```: Adds a section header slide to the presentation
   - Takes "presentation_name" and "header" as required string arguments
   - Creates a section header slide with "header" (and optionally "subtitle") and adds it to the presentation
@@ -31,7 +36,7 @@ The server implements multiple tools:
   - Creates a title slide with "title" and adds a chart dynamically built from data. Attempts to figure out the best type of chart from the data source.
 - ```add-slide-picture-with-caption```: Adds a picture with caption slide
   - Takes "presentation_name", "title", "caption", "image_path" as required string arguments
-  - Creates a picture with caption slide using the supplied "title", "caption", and "image_path". Can either use images created via the "generate-and-save-image" tool or use an "image_path" supplied by the user (image must exist in folder_path)
+  - Creates a picture with caption slide using the supplied "title", "caption", and "image_path". The image must exist in folder_path
 - ```open-presentation```: Opens a presentation for editing
   - Takes "presentation_name" as required arguments
   - Opens the given presentation and automatically saves a backup of it as "backup.pptx"
@@ -39,20 +44,8 @@ The server implements multiple tools:
 - ```save-presentation```: Saves the presentation to a file.
   - Takes "presentation_name" as required arguments.
   - Saves the presentation to the folder_path. The client must call this tool to finalize the process.
-- ```generate-and-save-image```: Generates an image for the presentation using OpenAI DALL-E 3
-  - Takes "prompt" and "file_name" as required string arguments
-  - Creates an image using OpenAI's DALL-E 3 model (requires an OpenAI API key)
 
 ## Configuration
-
-An environment variable is required for image generation via OpenAI
-Register for an account: https://platform.openai.com/account/api-keys
-
-```
-"env": {
-        "OPENAI_API_KEY": "your_openai_api_key"
-      }
-```
 
 A folder_path is required. All presentations and images will be saved to this folder.
 
@@ -83,6 +76,14 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 git clone https://github.com/supercurses/powerpoint.git
 ```
 
+#### Running locally with SSE
+
+You can run the server locally with SSE using the following command:
+
+```
+mcp-proxy --allow-origin='*' uv run powerpoint
+```
+
 #### Claude Desktop
 
 On MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
@@ -96,9 +97,6 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
   "mcpServers": {
     "powerpoint": {
       "command": "uv",
-      "env": {
-        "OPENAI_API_KEY": "your_openai_api_key"
-      },
       "args": [
         "--directory",
         "/path/to/powerpoint",
