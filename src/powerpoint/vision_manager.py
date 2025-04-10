@@ -52,13 +52,49 @@ class VisionManager:
             logger.error(f"Failed to generate image: {str(e)}")
             raise ValueError(f"Failed to generate image: {str(e)}")
 
+        # Download and save the image from the generated URL
+        return await self._download_and_save_image_from_url(image_url, output_path)
+    
+    async def download_and_save_image(self, image_url: str, output_path: str) -> str:
+        """
+        Download an image from a given URL and save it to the specified path.
+        
+        Args:
+            image_url: URL of the image to download
+            output_path: Path where the downloaded image should be saved
+            
+        Returns:
+            The path to the saved image
+            
+        Raises:
+            ValueError: If any step in the download or save process fails
+        """
+        logger.info(f"Downloading image from URL: '{image_url[:50]}...' (truncated)")
+        
+        # Download and save the image
+        return await self._download_and_save_image_from_url(image_url, output_path)
+    
+    async def _download_and_save_image_from_url(self, image_url: str, output_path: str) -> str:
+        """
+        Private method to download an image from a URL and save it to a specified path.
+        
+        Args:
+            image_url: URL of the image to download
+            output_path: Path where the downloaded image should be saved
+            
+        Returns:
+            The path to the saved image
+            
+        Raises:
+            ValueError: If any step in the download or save process fails
+        """
         # Download the image asynchronously
         try:
             async with aiohttp.ClientSession() as session:
                 logger.debug(f"Downloading image from URL")
                 async with session.get(image_url) as response:
                     if response.status != 200:
-                        error_msg = f"Failed to download generated image: HTTP {response.status}"
+                        error_msg = f"Failed to download image: HTTP {response.status}"
                         logger.error(error_msg)
                         raise ValueError(error_msg)
                     

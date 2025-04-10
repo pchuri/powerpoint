@@ -79,6 +79,25 @@ async def main(folder_path):
                 },
             ),
             types.Tool(
+                name="download-image",
+                description="Downloads an image from the provided URL and saves it to the specified path. Use this tool when "
+                            "the user wants to use an external image from a URL in their presentation.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "image_url": {
+                            "type": "string",
+                            "description": "URL of the image to download",
+                        },
+                        "file_name": {
+                            "type": "string",
+                            "description": "Filename to save the image as. Include an appropriate extension (.png, .jpg, etc.)",
+                        },
+                    },
+                    "required": ["image_url", "file_name"],
+                },
+            ),
+            types.Tool(
                 name="add-slide-title-only",
                 description="This tool adds a new title slide to the presentation you are working on. The tool doesn't "
                             "return anything. It requires the presentation_name to work on.",
@@ -430,6 +449,32 @@ async def main(folder_path):
                     types.TextContent(
                         type="text",
                         text=f"Failed to generate image: {str(e)}"
+                    )
+                ]
+        elif name == "download-image":
+            image_url = arguments.get("image_url")
+            file_name = arguments.get("file_name")
+            try:
+                safe_file_path = sanitize_path(folder_path, file_name)
+            except ValueError as e:
+                raise ValueError(f"Invalid file path: {str(e)}")
+
+            if not all([image_url, file_name]):
+                raise ValueError("Missing required arguments")
+
+            try:
+                saved_path = await vision_manager.download_and_save_image(image_url, str(safe_file_path))
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Successfully downloaded and saved image to: {saved_path}"
+                    )
+                ]
+            except Exception as e:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Failed to download image: {str(e)}"
                     )
                 ]
         elif name == "add-slide-comparison":
